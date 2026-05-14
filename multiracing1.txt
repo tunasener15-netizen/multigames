@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MultiRacing1</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; background: #34495e; margin: 0 auto; border-left: 5px solid #ecf0f1; border-right: 5px solid #ecf0f1; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #ui-layer { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center; color: white; pointer-events: none; }
+        h1 { margin: 0; font-size: 36px; text-shadow: 2px 2px #e74c3c; letter-spacing: 2px; }
+        #score { font-size: 20px; margin-top: 5px; background: rgba(0,0,0,0.3); padding: 5px 15px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <h1>MULTIRACING1</h1>
+    <div id="score">Puan: 0</div>
+</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
+
+    canvas.width = 400;
+    canvas.height = window.innerHeight; // Ekran boyuna göre ayarlanır
+
+    let score = 0;
+    let gameActive = true;
+
+    // Oyuncu Arabası
+    let car = { x: 175, y: canvas.height - 120, width: 45, height: 80, speed: 7 };
+
+    // Diğer Arabalar
+    let enemies = [];
+    let enemySpeed = 4;
+
+    // Yol Çizgileri
+    let roadLines = [];
+    for (let i = 0; i < 10; i++) {
+        roadLines.push({ x: 195, y: i * 100 });
+    }
+
+    let keys = {};
+    window.addEventListener("keydown", (e) => keys[e.code] = true);
+    window.addEventListener("keyup", (e) => keys[e.code] = false);
+
+    function spawnEnemy() {
+        // Arabaların yolun içinde kalmasını sağlar
+        let xPos = Math.random() * (canvas.width - 45);
+        enemies.push({ x: xPos, y: -100, width: 45, height: 80, color: `hsl(${Math.random() * 360}, 70%, 50%)` });
+    }
+
+    setInterval(() => { if(gameActive) spawnEnemy(); }, 1200);
+
+    function update() {
+        if (!gameActive) return;
+
+        // Kontroller
+        if (keys["ArrowLeft"] && car.x > 0) car.x -= car.speed;
+        if (keys["ArrowRight"] && car.x < canvas.width - car.width) car.x += car.speed;
+        if (keys["ArrowUp"] && car.y > 0) car.y -= car.speed;
+        if (keys["ArrowDown"] && car.y < canvas.height - car.height) car.y += car.speed;
+
+        // Sonsuz Yol Akışı
+        roadLines.forEach(line => {
+            line.y += enemySpeed + 2;
+            if (line.y > canvas.height) line.y = -100;
+        });
+
+        // Düşman Hareketleri ve Çarpışma
+        enemies.forEach((enemy, index) => {
+            enemy.y += enemySpeed;
+
+            // Çarpışma Testi
+            if (car.x < enemy.x + enemy.width &&
+                car.x + car.width > enemy.x &&
+                car.y < enemy.y + enemy.height &&
+                car.y + car.height > enemy.y) {
+                gameActive = false;
+                alert("MULTIRACING1 - Kaza Yaptın!\nSkorun: " + score);
+                location.reload();
+            }
+
+            // Puan ve Temizlik
+            if (enemy.y > canvas.height) {
+                enemies.splice(index, 1);
+                score += 10;
+                scoreElement.innerHTML = "Puan: " + score;
+                enemySpeed += 0.1; // Giderek hızlanır
+            }
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Yol Çizgilerini Çiz
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        roadLines.forEach(line => {
+            ctx.fillRect(line.x, line.y, 8, 40);
+        });
+
+        // Oyuncuyu Çiz (Kırmızı Yarış Arabası Stili)
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(car.x, car.y, car.width, car.height);
+        // Cam detayı
+        ctx.fillStyle = "#34495e";
+        ctx.fillRect(car.x + 5, car.y + 15, car.width - 10, 20);
+
+        // Düşmanları Çiz
+        enemies.forEach(enemy => {
+            ctx.fillStyle = enemy.color;
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+            // Far detayları
+            ctx.fillStyle = "white";
+            ctx.fillRect(enemy.x + 5, enemy.y + 70, 10, 5);
+            ctx.fillRect(enemy.x + 30, enemy.y + 70, 10, 5);
+        });
+    }
+
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+</script>
+
+</body>
+</html>
