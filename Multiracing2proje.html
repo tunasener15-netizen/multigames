@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MULTIRACING 2 - PRESTIGE EDITION</title>
+    <style>
+        :root {
+            --neon-green: #00ff66;
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+            --dark-bg: #06060e;
+            --panel-bg: rgba(13, 13, 25, 0.85);
+            --border-glow: rgba(0, 255, 102, 0.2);
+        }
+
+        body { 
+            margin: 0; 
+            background: #030307; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            color: #fff; 
+            overflow: hidden; 
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        #game-container { 
+            position: relative; 
+            width: 800px; 
+            height: 600px; 
+            background: #000; 
+            box-shadow: 0 0 50px rgba(0, 255, 102, 0.25); 
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            border-radius: 12px;
+            transform-origin: center;
+            overflow: hidden;
+        }
+
+        canvas { display: block; background: #13131c; width: 100%; height: 100%; }
+        
+        #menu {
+            position: absolute; 
+            inset: 0; 
+            background: radial-gradient(circle at center, rgba(10, 10, 24, 0.98) 0%, rgba(4, 4, 10, 0.99) 100%);
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100; 
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+
+        h1 {
+            font-size: 38px; 
+            font-weight: 900;
+            margin: 0; 
+            letter-spacing: 5px; 
+            text-align: center;
+            background: linear-gradient(135deg, #fff 30%, var(--neon-green) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 102, 0.4);
+        }
+        
+        .menu-layout { 
+            display: flex; 
+            gap: 16px; 
+            margin: 20px 0; 
+            align-items: flex-start; 
+            max-width: 100%; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+        }
+
+        .section-title { 
+            color: var(--neon-green); 
+            font-size: 11px; 
+            font-weight: 800; 
+            margin-bottom: 8px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 0 0 8px rgba(0,255,102,0.3); 
+        }
+
+        .shop-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            background: var(--panel-bg); 
+            padding: 12px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .car-box { 
+            background: #0d0d14; 
+            border: 1px solid #222235; 
+            padding: 10px 6px; 
+            width: 82px; 
+            text-align: center; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .car-box:hover:not(.locked) {
+            border-color: #555577;
+            transform: translateY(-2px);
+        }
+        .car-box.selected { 
+            border-color: var(--neon-green); 
+            background: linear-gradient(180deg, #0d0d14 0%, rgba(0,255,102,0.05) 100%);
+            box-shadow: 0 0 15px rgba(0,255,102,0.25); 
+        }
+        .car-box.locked { opacity: 0.4; background: #07070a; border-style: dashed; }
+        
+        .mod-panel, .map-panel, .diff-panel { 
+            background: var(--panel-bg); 
+            padding: 12px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255,255,255,0.06); 
+            width: 150px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .mod-btn { 
+            background: #141424; 
+            border: 1px solid #2b2b40; 
+            color: #eee; 
+            padding: 9px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            transition: all 0.15s ease;
+        }
+        .mod-btn:hover:not(:disabled) { 
+            background: var(--neon-green); 
+            color: #000; 
+            border-color: var(--neon-green);
+            box-shadow: 0 0 12px rgba(0,255,102,0.4);
+            font-weight: 800;
+        }
+        .mod-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+        .visual-select { display: flex; gap: 5px; margin-top: 2px; }
+        .vis-option { 
+            flex: 1; 
+            background: #141424; 
+            border: 1px solid #2b2b40; 
+            color: #aaa; 
+            font-size: 9px; 
+            padding: 6px 0; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            text-align: center; 
+            font-weight: 800;
+            transition: all 0.15s ease;
+        }
+        .vis-option.active { 
+            background: var(--neon-blue); 
+            color: #000; 
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0,240,255,0.4);
+        }
+
+        .map-option, .diff-option { 
+            background: #141424; 
+            border: 1px solid #2b2b40; 
+            padding: 8px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            text-align: center; 
+            font-size: 11px; 
+            font-weight: 700; 
+            transition: all 0.2s ease; 
+        }
+        .map-option:hover, .diff-option:hover { border-color: #444466; }
+        .map-option.active { 
+            background: linear-gradient(135deg, rgba(0,255,102,0.1) 0%, rgba(0,255,102,0.2) 100%);
+            border-color: var(--neon-green); 
+            color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(0,255,102,0.15);
+        }
+        
+        .diff-option.active { color: #fff; font-weight: 800; }
+        .diff-option.easy.active { background: #2e7d32; border-color: #4caf50; box-shadow: 0 0 12px rgba(76,175,80,0.3); }
+        .diff-option.normal.active { background: #1565c0; border-color: #2196f3; box-shadow: 0 0 12px rgba(33,150,243,0.3); }
+        .diff-option.hard.active { background: #c62828; border-color: #f44336; box-shadow: 0 0 15px rgba(244,67,54,0.4); }
+
+        .start-btn {
+            background: var(--neon-green); 
+            color: #000; 
+            font-size: 24px; 
+            font-weight: 900;
+            letter-spacing: 2px;
+            padding: 14px 60px; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            box-shadow: 0 0 30px rgba(0,255,102,0.5); 
+            margin-top: 15px; 
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .start-btn:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 0 40px rgba(0,255,102,0.7);
+        }
+        
+        #hud {
+            position: absolute; top: 15px; left: 15px; right: 15px;
+            display: none; justify-content: space-between; align-items: center; 
+            background: rgba(6, 6, 14, 0.85);
+            padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 800; 
+            pointer-events: none; border: 1px solid rgba(255,255,255,0.08); z-index: 10;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            letter-spacing: 1px;
+        }
+
+        .nitro-bar-container { display: flex; align-items: center; gap: 8px; }
+        .nitro-bg { width: 90px; height: 8px; background: #111; border: 1px solid #333; border-radius: 4px; overflow: hidden; }
+        .nitro-fill { height: 100%; width: 100%; background: linear-gradient(90deg, var(--neon-blue), #0044ff); }
+
+        #countdown-screen {
+            position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+            font-size: 120px; font-weight: 900; color: #00ff66; 
+            text-shadow: 0 0 40px #00ff66;
+            background: rgba(0,0,0,0.6); z-index: 50; pointer-events: none;
+        }
+        .pop-effect { animation: pop-anim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop-anim { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        #mobile-controls { position: absolute; inset: 0; pointer-events: none; z-index: 20; display: none; }
+        .joystick-zone {
+            position: absolute; bottom: 35px; left: 45px; width: 120px; height: 120px;
+            background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 50%; pointer-events: auto; display: flex; align-items: center; justify-content: center;
+            touch-action: none; box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
+        }
+        .joystick-handle {
+            width: 55px; height: 55px; background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255,255,255,0.7); border-radius: 50%; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            touch-action: none; pointer-events: none;
+        }
+        .nitro-btn-zone {
+            position: absolute; bottom: 45px; right: 45px; width: 95px; height: 95px;
+            background: radial-gradient(circle, #0055ff 0%, #001144 100%); 
+            border: 2px solid var(--neon-blue);
+            border-radius: 50%; pointer-events: auto; display: flex; align-items: center;
+            justify-content: center; font-weight: 900; font-size: 14px; color: #fff;
+            box-shadow: 0 0 20px rgba(0, 85, 255, 0.4); text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            letter-spacing: 1px; cursor: pointer;
+        }
+        .nitro-btn-zone:active {
+            background: radial-gradient(circle, #0077ff 0%, #002266 100%);
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="countdown-screen"></div>
+
+    <div id="hud">
+        <div style="color: #ffd700; font-weight: 900;">💰 <span id="hud-money">0</span></div>
+        <div style="color: #ffffff;">POS: <span id="rank-txt" style="color: #00ff66">1/10</span></div>
+        <div class="nitro-bar-container">
+            <span style="color: #00f0ff; font-size: 11px; font-weight: 900;">NOS</span>
+            <div class="nitro-bg"><div id="nitro-fill" class="nitro-fill"></div></div>
+        </div>
+        <div style="color: #00ff66; font-family: monospace; font-size: 16px;"><span id="spd-txt">0</span> <span style="font-size:10px;">KM/H</span></div>
+    </div>
+
+    <div id="mobile-controls">
+        <div class="joystick-zone" id="joy-zone">
+            <div class="joystick-handle" id="joy-handle"></div>
+        </div>
+        <div class="nitro-btn-zone" id="nitro-btn">NITRO</div>
+    </div>
+
+    <div id="menu">
+        <h1>MULTIRACING 2</h1>
+        <div style="font-size: 15px; color: #ffd700; margin-top: 4px; font-weight: 800; letter-spacing: 1px;">💰 HESAP: <span id="menu-money">0</span></div>
+        
+        <div class="menu-layout">
+            <div>
+                <div class="section-title">🚗 ARAÇ SEÇİMİ</div>
+                <div class="shop-grid" id="shop-area"></div>
+            </div>
+            
+            <div>
+                <div class="section-title">🔧 PERFORMANS & STİL</div>
+                <div class="mod-panel">
+                    <div>
+                        <button class="mod-btn" id="btn-up-speed" onclick="buyUpgrade('speed')"><span>🚀 MAX HIZ</span> <span id="cost-up-speed">30 💰</span></button>
+                        <div style="font-size:10px; color:#888; margin-top:3px; text-align:center; font-weight:700;">STAGE: <span id="lvl-speed" style="color:#00ff66">0</span>/5</div>
+                    </div>
+                    <div>
+                        <button class="mod-btn" id="btn-up-accel" onclick="buyUpgrade('accel')"><span>⚡ İVME</span> <span id="cost-up-accel">30 💰</span></button>
+                        <div style="font-size:10px; color:#888; margin-top:3px; text-align:center; font-weight:700;">STAGE: <span id="lvl-accel" style="color:#00ff66">0</span>/5</div>
+                    </div>
+                    <div style="margin-top: 2px;">
+                        <div class="visual-select">
+                            <div class="vis-option" id="neon-0" onclick="setVisual('neon', 0)">NEON YOK</div>
+                            <div class="vis-option" id="neon-1" onclick="setVisual('neon', 1)" style="color:#00f0ff;">MAVİ</div>
+                            <div class="vis-option" id="neon-2" onclick="setVisual('neon', 2)" style="color:#ff007f;">MİRAGE</div>
+                            <div class="vis-option" id="neon-3" onclick="setVisual('neon', 3)" style="color:#00ff66;">YEŞİL</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-title">🗺️ PİST SEÇİMİ</div>
+                <div class="map-panel" id="map-area"></div>
+            </div>
+
+            <div>
+                <div class="section-title">🎯 ETKİNLİK ZORLUĞU</div>
+                <div class="diff-panel" id="diff-area"></div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="triggerCountdown()">YARIŞA BAŞLA 🏁</button>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+
+    let money = parseInt(localStorage.getItem('mr2_money')) || 0;
+    let ownedCars = JSON.parse(localStorage.getItem('mr2_owned')) || [0];
+    let selectedCar = parseInt(localStorage.getItem('mr2_selected')) || 0;
+    let upgrades = JSON.parse(localStorage.getItem('mr2_upgrades')) || { speed: 0, accel: 0 };
+    let visuals = JSON.parse(localStorage.getItem('mr2_visuals')) || { neon: 0, spoiler: 0 };
+    let selectedMap = 0;
+    let selectedDiff = 1; 
+
+    const carCatalog = [
+        { name: "TIAT", price: 0, baseSpeed: 19, baseAccel: 0.18, color: "#ffffff" },
+        { name: "VOYOTA", price: 40, baseSpeed: 23, baseAccel: 0.23, color: "#3498db" },
+        { name: "PERRARI", price: 90, baseSpeed: 27, baseAccel: 0.30, color: "#ff0000" },
+        { name: "NAMBORG", price: 150, baseSpeed: 32, baseAccel: 0.38, color: "#ccff00" },
+        { name: "NUGGATTI", price: 240, baseSpeed: 37, baseAccel: 0.48, color: "#1e272e" },
+        { name: "JOENIG", price: 350, baseSpeed: 43, baseAccel: 0.58, color: "#f1c40f" }
+    ];
+
+    const mapCatalog = [
+        { name: "Şehir İçi", length: 45000, bg: "#1e5e22", road: "#3a3a40", line: "#ffffff", sideLine: "#f5f5f5" },
+        { name: "Neon", length: 60000, bg: "#020208", road: "#12121c", line: "#ff00ff", sideLine: "#00ffff" },
+        { name: "Çöl Pisti", length: 75000, bg: "#cc8e35", road: "#574026", line: "#ffffff", sideLine: "#ffda79" }
+    ];
+
+    const diffCatalog = [
+        { name: "KOLAY", aiSpeedMin: 0.55, aiSpeedMax: 0.68, multiplier: 0.8, className: "easy", label: "Çaylak (x0.8)" },
+        { name: "NORMAL", aiSpeedMin: 0.76, aiSpeedMax: 0.88, multiplier: 1.0, className: "normal", label: "Sürücü (x1.0)" },
+        { name: "ZOR", aiSpeedMin: 0.93, aiSpeedMax: 1.02, multiplier: 1.5, className: "hard", label: "Efsane (x1.5)" }
+    ];
+
+    const neonColors = ["none", "rgba(0, 240, 255, 0.8)", "rgba(255, 0, 127, 0.8)", "rgba(0, 255, 102, 0.8)"];
+
+    let raceActive = false;
+    let countdownActive = false; 
+    let playerX = 400; 
+    let playerDistance = 0;
+    let playerSpeed = 0;
+    let nitroAmount = 100; 
+    let isNitroActive = false;
+    const trackWidth = 500;
+    let currentScale = 1;
+
+    let rivals = [];
+    let keys = {};
+    let bgOffset = 0;
+    let mobileInputX = 0; 
+
+    function resizeGame() {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        currentScale = Math.min(windowWidth / 800, windowHeight / 600);
+        container.style.transform = `scale(${currentScale})`;
+    }
+    window.addEventListener('resize', resizeGame);
+    window.addEventListener('load', resizeGame);
+    resizeGame();
+
+    window.addEventListener('keydown', e => { keys[e.code] = true; });
+    window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    const joyZone = document.getElementById('joy-zone');
+    const joyHandle = document.getElementById('joy-handle');
+    let isDraggingJoy = false;
+
+    function activateJoy(e) { isDraggingJoy = true; calculateJoy(e); }
+    function moveJoy(e) { if (!isDraggingJoy) return; calculateJoy(e); }
+    function deactivateJoy() { isDraggingJoy = false; mobileInputX = 0; joyHandle.style.transform = `translate(0px, 0px)`; }
+
+    function calculateJoy(e) {
+        const rect = joyZone.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const joyCenterX = rect.left + rect.width / 2;
+        let deltaX = (clientX - joyCenterX) / currentScale;
+        
+        const maxLimit = 40; 
+        if (deltaX > maxLimit) deltaX = maxLimit;
+        if (deltaX < -maxLimit) deltaX = -maxLimit;
+        
+        joyHandle.style.transform = `translate(${deltaX}px, 0px)`;
+        mobileInputX = deltaX / maxLimit; 
+    }
+
+    joyZone.addEventListener('touchstart', activateJoy);
+    window.addEventListener('touchmove', moveJoy, { passive: false });
+    window.addEventListener('touchend', deactivateJoy);
+
+    joyZone.addEventListener('mousedown', activateJoy);
+    window.addEventListener('mousemove', moveJoy);
+    window.addEventListener('mouseup', deactivateJoy);
+
+    const nitroBtn = document.getElementById('nitro-btn');
+    nitroBtn.addEventListener('touchstart', () => { isNitroActive = true; });
+    nitroBtn.addEventListener('touchend', () => { isNitroActive = false; });
+    nitroBtn.addEventListener('mousedown', () => { isNitroActive = true; });
+    nitroBtn.addEventListener('mouseup', () => { isNitroActive = false; });
+
+    function drawAdvancedCar(x, y, mainColor) {
+        ctx.save();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+        ctx.fillRect(x - 22, y + 5, 44, 75);
+
+        ctx.fillStyle = "#0c0c10";
+        ctx.fillRect(x - 25, y + 10, 6, 15);
+        ctx.fillRect(x + 19, y + 10, 6, 15);
+        ctx.fillRect(x - 26, y + 50, 7, 17);
+        ctx.fillRect(x + 19, y + 50, 7, 17);
+
+        ctx.fillStyle = mainColor;
+        ctx.beginPath();
+        ctx.moveTo(x - 16, y + 72);
+        ctx.lineTo(x - 18, y + 30);
+        ctx.lineTo(x - 14, y + 5);
+        ctx.lineTo(x + 14, y + 5);
+        ctx.lineTo(x + 18, y + 30);
+        ctx.lineTo(x + 16, y + 72);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+        ctx.fillRect(x - 3, y + 8, 6, 25);
+
+        ctx.fillStyle = "#090b11";
+        ctx.beginPath();
+        ctx.moveTo(x - 11, y + 42);
+        ctx.lineTo(x - 9, y + 26);
+        ctx.lineTo(x + 9, y + 26);
+        ctx.lineTo(x + 11, y + 42);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y + 28);
+        ctx.lineTo(x + 2, y + 28);
+        ctx.lineTo(x - 2, y + 36);
+        ctx.lineTo(x - 8, y + 36);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffaa";
+        ctx.fillRect(x - 13, y + 5, 4, 3);
+        ctx.fillRect(x + 9, y + 5, 4, 3);
+
+        ctx.fillStyle = "#050508";
+        ctx.fillRect(x - 22, y + 68, 44, 5);
+        ctx.fillStyle = mainColor;
+        ctx.fillRect(x - 22, y + 65, 3, 9);
+        ctx.fillRect(x + 19, y + 65, 3, 9);
+
+        ctx.restore();
+    }
+
+    function selectMap(index) {
+        selectedMap = index;
+        updateGarageUI();
+    }
+
+    function selectDiff(index) {
+        selectedDiff = index;
+        updateGarageUI();
+    }
+
+    function updateGarageUI() {
+        localStorage.setItem('mr2_money', money);
+        localStorage.setItem('mr2_owned', JSON.stringify(ownedCars));
+        localStorage.setItem('mr2_selected', selectedCar);
+        localStorage.setItem('mr2_upgrades', JSON.stringify(upgrades));
+        localStorage.setItem('mr2_visuals', JSON.stringify(visuals));
+
+        document.getElementById('menu-money').innerText = money;
+        document.getElementById('hud-money').innerText = money;
+
+        const shopArea = document.getElementById('shop-area');
+        shopArea.innerHTML = '';
+        carCatalog.forEach((car, index) => {
+            const isOwned = ownedCars.includes(index);
+            const box = document.createElement('div');
+            box.className = `car-box ${isOwned ? '' : 'locked'} ${selectedCar === index ? 'selected' : ''}`;
+            box.onclick = () => {
+                if (isOwned) selectedCar = index;
+                else if (money >= car.price) { money -= car.price; ownedCars.push(index); selectedCar = index; }
+                updateGarageUI();
+            };
+            box.innerHTML = `
+                <div style="font-weight:800; font-size:10px; letter-spacing:0.5px;">${car.name}</div>
+                <div style="width:34px; height:12px; background:${car.color}; margin:6px auto; border:1px solid rgba(255,255,255,0.1); border-radius:2px;"></div>
+                <div style="color:#ffd700; font-size:9px; font-weight:800;">${isOwned ? (selectedCar === index ? 'AKTİF' : 'SEÇ') : car.price + ' 💰'}</div>
+            `;
+            shopArea.appendChild(box);
+        });
+
+        const mapArea = document.getElementById('map-area');
+        mapArea.innerHTML = '';
+        mapCatalog.forEach((map, index) => {
+            const mBox = document.createElement('div');
+            mBox.className = `map-option ${selectedMap === index ? 'active' : ''}`;
+            mBox.onclick = () => { selectMap(index); };
+            mBox.innerHTML = `
+                <div>${map.name}</div>
+                <div style="font-size:8px; opacity:0.6; margin-top:2px;">${(map.length/1000).toFixed(1)} KM</div>
+            `;
+            mapArea.appendChild(mBox);
+        });
+
+        const diffArea = document.getElementById('diff-area');
+        diffArea.innerHTML = '';
+        diffCatalog.forEach((diff, index) => {
+            const dBox = document.createElement('div');
+            dBox.className = `diff-option ${diff.className} ${selectedDiff === index ? 'active' : ''}`;
+            dBox.onclick = () => { selectDiff(index); };
+            dBox.innerHTML = `<div>${diff.label}</div>`;
+            diffArea.appendChild(dBox);
+        });
+
+        document.getElementById('lvl-speed').innerText = upgrades.speed;
+        document.getElementById('lvl-accel').innerText = upgrades.accel;
+        let speedCost = (upgrades.speed + 1) * 30;
+        let accelCost = (upgrades.accel + 1) * 30;
+
+        document.getElementById('btn-up-speed').disabled = upgrades.speed >= 5;
+        document.getElementById('btn-up-speed').querySelector('span:last-child').innerText = upgrades.speed >= 5 ? "MAX" : speedCost + " 💰";
+        document.getElementById('btn-up-accel').disabled = upgrades.accel >= 5;
+        document.getElementById('btn-up-accel').querySelector('span:last-child').innerText = upgrades.accel >= 5 ? "MAX" : accelCost + " 💰";
+
+        for(let i=0; i<=3; i++) {
+            const neonOption = document.getElementById(`neon-${i}`);
+            if(neonOption) neonOption.classList.toggle('active', visuals.neon === i);
+        }
+    }
+
+    function buyUpgrade(type) {
+        let cost = (upgrades[type] + 1) * 30;
+        if (money >= cost && upgrades[type] < 5) { money -= cost; upgrades[type]++; updateGarageUI(); }
+    }
+
+    function setVisual(type, value) { visuals[type] = value; updateGarageUI(); }
+
+    function triggerCountdown() {
+        document.getElementById('menu').style.display = 'none';
+        const cdScreen = document.getElementById('countdown-screen');
+        cdScreen.style.display = 'flex';
+        
+        readyRaceData();
+        countdownActive = true; 
+        let currentCount = 3;
+
+        cdScreen.innerText = currentCount;
+        cdScreen.style.color = "#ff2255";
+        cdScreen.classList.add('pop-effect');
+
+        const interval = setInterval(() => {
+            currentCount--;
+            cdScreen.classList.remove('pop-effect'); void cdScreen.offsetWidth; cdScreen.classList.add('pop-effect');
+            
+            if (currentCount > 0) { 
+                cdScreen.innerText = currentCount; 
+                cdScreen.style.color = "#ff2255"; 
+            }
+            else if (currentCount === 0) { 
+                cdScreen.innerText = "GAZLA!"; 
+                cdScreen.style.color = "#00ff66"; 
+            }
+            else { 
+                clearInterval(interval); 
+                cdScreen.style.display = 'none'; 
+                countdownActive = false; 
+                raceActive = true; 
+                document.getElementById('hud').style.display = 'flex'; 
+                document.getElementById('mobile-controls').style.display = 'block';
+            }
+        }, 1000);
+    }
+
+    function readyRaceData() {
+        playerDistance = 0; playerSpeed = 0; playerX = 400; nitroAmount = 100; rivals = [];
+        const finalMaxSpeed = carCatalog[selectedCar].baseSpeed + (upgrades.speed * 2.5);
+        const diffSetting = diffCatalog[selectedDiff];
+
+        for(let i = 0; i < 9; i++) {
+            let speedPercentage = diffSetting.aiSpeedMin + Math.random() * (diffSetting.aiSpeedMax - diffSetting.aiSpeedMin);
+            rivals.push({
+                xOffset: -180 + (i % 3) * 150 + (Math.random() * 15),
+                distance: (Math.floor(i / 3) * 240) + 180,
+                speed: finalMaxSpeed * speedPercentage,
+                width: 40,
+                height: 75,
+                color: `hsl(${Math.random() * 360}, 85%, 45%)`
+            });
+        }
+    }
+
+    function gameLoop() {
+        const currentMapData = mapCatalog[selectedMap];
+
+        ctx.fillStyle = currentMapData.bg; ctx.fillRect(0, 0, 800, 600);
+        ctx.fillStyle = currentMapData.road; ctx.fillRect(150, 0, trackWidth, 600);
+
+        ctx.fillStyle = currentMapData.sideLine; 
+        ctx.fillRect(142, 0, 8, 600); 
+        ctx.fillRect(650, 0, 8, 600);
+
+        ctx.fillStyle = currentMapData.line;
+        for (let i = 0; i < 10; i++) {
+            let lineY = ((i * 85) + bgOffset) % 600;
+            ctx.fillRect(396, lineY, 8, 45);
+        }
+
+        const currentCar = carCatalog[selectedCar];
+        let playerNitroActive = false;
+
+        if (raceActive || countdownActive) {
+            let topSpeedLimit = currentCar.baseSpeed + (upgrades.speed * 2.5);
+            let totalAcceleration = currentCar.baseAccel + (upgrades.accel * 0.06);
+
+            if (raceActive && (keys['Space'] || isNitroActive) && nitroAmount > 0) {
+                playerNitroActive = true;
+                topSpeedLimit *= 1.35; 
+                totalAcceleration *= 2.0; 
+                nitroAmount -= 0.6; 
+            } else {
+                playerNitroActive = false;
+                if (nitroAmount < 100 && raceActive) nitroAmount += 0.05; 
+            }
+            document.getElementById('nitro-fill').style.width = `${nitroAmount}%`;
+
+            if (raceActive) {
+                if (playerSpeed < topSpeedLimit) playerSpeed += totalAcceleration;
+                else if (playerSpeed > topSpeedLimit) playerSpeed -= 0.2; 
+
+                playerDistance += playerSpeed;
+                bgOffset += playerSpeed;
+
+                if (keys['ArrowLeft'] || keys['KeyA']) {
+                    playerX -= 6.5;
+                } else if (keys['ArrowRight'] || keys['KeyD']) {
+                    playerX += 6.5;
+                } else if (mobileInputX !== 0) {
+                    playerX += mobileInputX * 7.0; 
+                }
+            }
+
+            if (playerX < 172) playerX = 172;
+            if (playerX > 628) playerX = 628;
+
+            rivals.forEach(rival => {
+                if (raceActive) rival.distance += rival.speed;
+                let rY = 480 - (rival.distance - playerDistance);
+                let rX = 400 + rival.xOffset;
+
+                if (rY > -100 && rY < 700) {
+                    drawAdvancedCar(rX + 20, rY, rival.color);
+
+                    let pX1 = playerX - 20, pX2 = playerX + 20;
+                    let pY1 = 480, pY2 = 555;
+                    let rX1 = rX, rX2 = rX + rival.width;
+                    let rY1 = rY, rY2 = rY + rival.height;
+
+                    if (pX1 < rX2 && pX2 > rX1 && pY1 < rY2 && pY2 > rY1) {
+                        if (playerDistance < rival.distance && playerSpeed > rival.speed) {
+                            playerSpeed *= 0.82; 
+                            rival.speed *= 0.6;  
+                            rival.distance += 25; 
+                        } 
+                        if (playerX < rX + 20) { playerX -= 8; rival.xOffset += 5; }
+                        else { playerX += 8; rival.xOffset -= 5; }
+                    }
+                }
+            });
+
+            if (visuals.neon > 0) {
+                ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = neonColors[visuals.neon];
+                ctx.fillStyle = neonColors[visuals.neon]; ctx.fillRect(playerX - 18, 485, 36, 65); ctx.restore();
+            }
+
+            if (playerNitroActive && playerSpeed > 5) {
+                ctx.fillStyle = '#00f0ff'; 
+                ctx.fillRect(playerX - 13, 555, 3, 35 + Math.random()*20); 
+                ctx.fillRect(playerX + 10, 555, 3, 35 + Math.random()*20);
+            } else if (raceActive && playerSpeed > 5) {
+                let exhaustLength = 10 + Math.random() * (playerSpeed * 0.7);
+                ctx.fillStyle = '#ff5500'; ctx.fillRect(playerX - 12, 555, 2, exhaustLength); ctx.fillRect(playerX + 10, 555, 2, exhaustLength);
+            }
+
+            drawAdvancedCar(playerX, 480, currentCar.color);
+
+            if (raceActive) {
+                let leaderboard = [...rivals, { distance: playerDistance }];
+                leaderboard.sort((a, b) => b.distance - a.distance);
+                let myRank = leaderboard.findIndex(p => p.distance === playerDistance) + 1;
+
+                document.getElementById('rank-txt').innerText = myRank + "/10";
+                document.getElementById('spd-txt').innerText = Math.floor(playerSpeed * 9);
+
+                if (playerDistance >= currentMapData.length) {
+                    raceActive = false;
+                    let basePrize = (myRank === 1) ? 35 : (myRank === 2) ? 20 : (myRank === 3) ? 12 : 5;
+                    let finalPrize = Math.round(basePrize * diffCatalog[selectedDiff].multiplier);
+                    
+                    money += finalPrize;
+                    alert(`DAMALI BAYRAK! 🏁\nYarışı ${myRank}. sırada bitirdin!\nKazandığın Ödül: +${finalPrize} 💰`);
+                    document.getElementById('menu').style.display = 'flex';
+                    document.getElementById('hud').style.display = 'none';
+                    document.getElementById('mobile-controls').style.display = 'none';
+                    updateGarageUI();
+                }
+            }
+        } else {
+            if (visuals.neon > 0) {
+                ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = neonColors[visuals.neon];
+                ctx.fillStyle = neonColors[visuals.neon]; ctx.fillRect(400 - 18, 485, 36, 65); ctx.restore();
+            }
+            drawAdvancedCar(400, 480, currentCar.color);
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    updateGarageUI();
+    gameLoop();
+</script>
+</body>
+</html>
